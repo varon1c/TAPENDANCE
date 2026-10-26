@@ -1,0 +1,20 @@
+# Dependencies
+node_modules/
+
+# Environment-specific configuration
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Runtime databases and logs
+*.sqlite
+*.sqlite3
+*.db
+*.log
+
+# Build output and tooling
+dist/
+build/
+.expo/
+.DS_Store
