@@ -1,0 +1,14 @@
+{
+  "expo": {
+    "name": "TAPENDANCE",
+    "slug": "tapendance",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "android": {
+      "package": "com.varon1c.tapendance",
+      "permissions": ["android.permission.NFC", "android.permission.ACCESS_FINE_LOCATION", "android.permission.ACCESS_COARSE_LOCATION"]
+    },
+    "plugins": [["expo-location", { "locationWhenInUsePermission": "TAPENDANCE records a location alongside NFC scans." }]]
+  }
+}

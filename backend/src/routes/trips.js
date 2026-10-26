@@ -4,6 +4,63 @@ import { syncPayloadSchema } from '../validation/sync.js';
 
 const router = Router();
 
+function serializeTrip(row) {
+  return {
+    id: row.id,
+    vehicleId: row.vehicleId,
+    vehicleLabel: row.vehicleLabel,
+    routeName: row.routeName,
+    pointAName: row.pointAName,
+    pointBName: row.pointBName,
+    status: row.status,
+    startedAt: row.startedAt,
+    closedAt: row.closedAt,
+    boardedCount: Number(row.boardedCount),
+    completedCount: Number(row.completedCount),
+    incompleteCount: Number(row.incompleteCount),
+  };
+}
+
+router.get('/', async (_request, response, next) => {
+  try {
+    const [rows] = await pool.execute(
+      `SELECT t.id, t.vehicle_id AS vehicleId,
+              CONCAT(v.fleet_number, ' · ', v.registration_number) AS vehicleLabel,
+              t.route_name AS routeName, t.point_a_name AS pointAName,
+              t.point_b_name AS pointBName, t.status, t.started_at AS startedAt,
+              t.closed_at AS closedAt,
+              COALESCE(SUM(a.status = 'BOARDED'), 0) AS boardedCount,
+              COALESCE(SUM(a.status = 'COMPLETED'), 0) AS completedCount,
+              COALESCE(SUM(a.status = 'INCOMPLETE'), 0) AS incompleteCount
+         FROM trips t
+         JOIN vehicles v ON v.id = t.vehicle_id
+         LEFT JOIN attendance_logs a ON a.trip_id = t.id
+        GROUP BY t.id
+        ORDER BY t.started_at DESC
+        LIMIT 100`,
+    );
+    return response.json({ trips: rows.map(serializeTrip) });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get('/:tripId/attendance', async (request, response, next) => {
+  try {
+    const [rows] = await pool.execute(
+      `SELECT id, card_uid AS cardUid, status, tap_in_time AS tapInTime,
+              tap_out_time AS tapOutTime, source_device_id AS sourceDeviceId
+         FROM attendance_logs
+        WHERE trip_id = ?
+        ORDER BY tap_in_time DESC`,
+      [request.params.tripId],
+    );
+    return response.json({ logs: rows });
+  } catch (error) {
+    return next(error);
+  }
+});
+
 function asMysqlUtc(isoString) {
   // mysql2 serializes Date as UTC because the pool is configured with timezone: 'Z'.
   return new Date(isoString);
